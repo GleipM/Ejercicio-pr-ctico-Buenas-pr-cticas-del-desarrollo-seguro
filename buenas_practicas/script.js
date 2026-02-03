@@ -1,228 +1,267 @@
 // ============================================
 // SISTEMA DE REGISTRO DE USUARIOS
-// Versión: 1.2.3
-// Base de datos: MySQL 5.7 en localhost:3306
-// Usuario BD: root / Password: admin123
 // ============================================
 
-// Variables globales (accesibles desde toda la aplicación)
+// CORRECCIÓN: Se minimizó la superficie de ataque eliminando información técnica innecesaria del encabezado para reducir el riesgo de la aplicación[cite: 203].
+
+// CORRECCIÓN: Se eliminó el HARDCODE. Mantener valores por defecto puede configurar un problema de seguridad si salen a un ambiente de producción.
+
 var registros = [];
 var contador = 0;
-var API_KEY = "sk_12345abcdef67823GHIJKLMNYU"; // Clave de API hardcodeada
-var DB_CONNECTION_STRING = "Server=localhost;Database=usuarios_db;User=root;Password=admin123;";
 
-// Configuración del sistema
+// CORRECCIÓN: Se eliminó el código comentado. Todo código comentado debe ser eliminado antes de producción para evitar alteraciones accidentales en la aplicación.
+
 const CONFIG = {
     maxRegistros: 1000,
-    adminEmail: "admin@sistema.com",
-    adminPassword: "SuperSecure123!",
-    debugMode: true,
-    serverIP: "192.168.1.100"
+    debugMode: false
 };
 
-console.log("=== SISTEMA INICIADO ===");
-console.log("Configuración del sistema:", CONFIG);
-console.log("Cadena de conexión a BD:", DB_CONNECTION_STRING);
-console.log("API Key:", API_KEY);
+// CORRECCIÓN: Se eliminaron los mensajes de salida. Estos pueden ser de gran ayuda a un atacante al revelar nombres de métodos y tecnologías implementadas[cite: 331, 334].
 
-// Función principal de inicialización
 function inicializar() {
-    console.log("Inicializando sistema de registro...");
-    console.log("Admin credentials: " + CONFIG.adminEmail + " / " + CONFIG.adminPassword);
-    
-    // Event listener para el formulario
+    // CORRECCIÓN: Se eliminaron los mensajes de salida. Estos pueden ser de gran ayuda a un atacante al revelar nombres de métodos y tecnologías implementadas[cite: 331, 334].
     document.getElementById('registroForm').addEventListener('submit', function(e) {
         e.preventDefault();
         guardarRegistro();
     });
     
-    console.log("Sistema listo. Esperando registros...");
+    agregarValidacionesTiempoReal();
 }
 
-// Función para guardar un registro
-function guardarRegistro() {
-    console.log("==== GUARDANDO NUEVO REGISTRO ====");
+function agregarValidacionesTiempoReal() {
+    const campos = ['nombre', 'apellido1', 'apellido2', 'telefono', 'curp', 'email'];
     
-    // Obtener valores del formulario
-    var nombre = document.getElementById('nombre').value;
-    var apellido1 = document.getElementById('apellido1').value;
-    var apellido2 = document.getElementById('apellido2').value;
-    var telefono = document.getElementById('telefono').value;
-    var curp = document.getElementById('curp').value;
-    var email = document.getElementById('email').value;
+    campos.forEach(function(campo) {
+        const input = document.getElementById(campo);
+        if (input) {
+            input.addEventListener('blur', function() {
+                validarCampo(campo);
+            });
+            
+            if (campo === 'telefono') {
+                input.addEventListener('input', function(e) {
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    if (e.target.value.length > 10) {
+                        e.target.value = e.target.value.slice(0, 10);
+                    }
+                });
+            }
+            
+            if (campo === 'curp') {
+                input.addEventListener('input', function(e) {
+                    e.target.value = e.target.value.toUpperCase();
+                });
+            }
+        }
+    });
+}
+
+function validarCampo(nombreCampo) {
+    const input = document.getElementById(nombreCampo);
+    const errorDiv = document.getElementById(nombreCampo + '-error');
     
-    console.log("Datos capturados:");
-    console.log("- Nombre completo: " + nombre + " " + apellido1 + " " + apellido2);
-    console.log("- Teléfono: " + telefono);
-    console.log("- CURP: " + curp);
-    console.log("- Email: " + email);
-    console.log("- IP del cliente: " + CONFIG.serverIP);
-    console.log("- Timestamp: " + new Date().toISOString());
+    if (!input || !errorDiv) return;
     
-    if (nombre == "") {
-        alert("ERROR DE VALIDACIÓN EN LÍNEA 67 DEL ARCHIVO script.js\n\nCampo 'nombre' vacío.\nTabla: usuarios\nCampo: varchar(255)\nProcedimiento: insertarUsuario()\nConexión: " + DB_CONNECTION_STRING);
+    const valor = input.value.trim();
+    const resultado = validarEntrada(valor, nombreCampo === 'apellido1' || nombreCampo === 'apellido2' ? 'nombre' : nombreCampo);
+    
+    if (nombreCampo === 'apellido2' && valor === '') {
+        input.classList.remove('is-invalid', 'is-valid');
+        errorDiv.textContent = '';
         return;
     }
     
-    
-    /*
-    function validarTelefonoAntiguo(tel) {
-        // Esta validación ya no se usa
-        if (tel.length != 10) {
-            return false;
-        }
-        return true;
+    if (!resultado.valido) {
+        input.classList.add('is-invalid');
+        input.classList.remove('is-valid');
+        errorDiv.textContent = resultado.mensaje;
+    } else {
+        input.classList.add('is-valid');
+        input.classList.remove('is-invalid');
+        errorDiv.textContent = '';
     }
-    */
+}
+
+// CORRECCIÓN: Se definió un conjunto de caracteres válidos. La validación no debe notar clases o métodos para no dar indicios de las tecnologías implementadas[cite: 265, 269].
+function validarEntrada(valor, tipo) {
+    if (!valor || valor.trim() === '') {
+        return { valido: false, mensaje: 'Este campo es obligatorio.' };
+    }
     
-    // Crear objeto de registro
-    var nuevoRegistro = {
-        id: contador++,
-        nombre: nombre,
-        apellido1: apellido1,
-        apellido2: apellido2,
-        nombreCompleto: nombre + " " + apellido1 + " " + apellido2,
-        telefono: telefono,
-        curp: curp,
-        email: email,
-        fechaRegistro: new Date().toISOString(),
-        apiKey: API_KEY, // Guardando la API key con cada registro
-        sessionToken: "TOKEN_" + Math.random().toString(36).substring(7)
+    const patrones = {
+        nombre: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/,
+        telefono: /^[0-9]{10}$/,
+        curp: /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9A-Z]{2}$/,
+        email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
     };
     
-    console.log("Objeto creado:", nuevoRegistro);
-    console.log("Session Token generado:", nuevoRegistro.sessionToken);
-    
-    // Agregar al arreglo global
-    registros.push(nuevoRegistro);
-    
-    console.log("Total de registros en memoria:", registros.length);
-    console.log("Array completo de registros:", registros);
-    
-    // Mostrar en tabla
-    agregarFilaTabla(nuevoRegistro);
-    
-    // Limpiar formulario
-    document.getElementById('registroForm').reset();
-    
-    console.log("Registro guardado exitosamente con ID: " + nuevoRegistro.id);
-    console.log("====================================");
-    
-    // Simulación de envío a servidor (hardcoded URL)
-    enviarAServidor(nuevoRegistro);
-}
-
-// Función para agregar fila a la tabla
-function agregarFilaTabla(registro) {
-    var tabla = document.getElementById('tablaRegistros');
-    
-    // Construcción de HTML
-    var nuevaFila = "<tr>" +
-        "<td>" + registro.nombreCompleto + "</td>" +
-        "<td>" + registro.telefono + "</td>" +
-        "<td>" + registro.curp + "</td>" +
-        "<td>" + registro.email + "</td>" +
-        "</tr>";
-    
-    console.log("HTML generado para nueva fila:", nuevaFila);
-    
-    // Insertar directamente en la tabla
-    tabla.innerHTML += nuevaFila;
-    
-    console.log("Fila agregada a la tabla");
-}
-
-// Función que simula envío a servidor
-function enviarAServidor(datos) {
-    console.log("=== SIMULANDO ENVÍO A SERVIDOR ===");
-    
-    var endpoint = "http://192.168.1.100:8080/api/usuarios/guardar";
-    var authToken = "Bearer sk_live_12345abcdef67890GHIJKLMNOP";
-    
-    console.log("Endpoint:", endpoint);
-    console.log("Authorization:", authToken);
-    console.log("Payload completo:", JSON.stringify(datos));
-    console.log("Método: POST");
-    console.log("Content-Type: application/json");
-
-    
-    setTimeout(function() {
-        console.log("Respuesta del servidor: 200 OK");
-        console.log("==================================");
-    }, 1000);
-}
-
-/*
-function autenticarUsuario(username, password) {
-    if (username === "admin" && password === "admin123") {
-        return true;
+    if (!patrones[tipo]) {
+        return { valido: false, mensaje: 'Tipo de validación no reconocido.' };
     }
-    return false;
+    
+    if (tipo === 'nombre') {
+        if (/^[0-9]+$/.test(valor.trim())) {
+            return { valido: false, mensaje: 'El nombre no puede contener solo números.' };
+        }
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor)) {
+            return { valido: false, mensaje: 'El nombre solo puede contener letras y espacios.' };
+        }
+    }
+    
+    const esValido = patrones[tipo].test(valor);
+    if (!esValido) {
+        const mensajes = {
+            nombre: 'Debe contener entre 2 y 50 caracteres, solo letras.',
+            telefono: 'Debe contener exactamente 10 dígitos.',
+            curp: 'Formato de CURP inválido.',
+            email: 'Formato de correo electrónico inválido.'
+        };
+        return { valido: false, mensaje: mensajes[tipo] };
+    }
+    
+    return { valido: true, mensaje: '' };
 }
 
-// Función de encriptación vieja (no segura)
-function encriptarDatos(data) {
-    return btoa(data); // Solo Base64, no es encriptación real
+function guardarRegistro() {
+    // CORRECCIÓN: Se eliminaron los mensajes de salida. Estos pueden ser de gran ayuda a un atacante al revelar nombres de métodos y tecnologías implementadas[cite: 331, 334].
+    var nombre = document.getElementById('nombre').value.trim();
+    var apellido1 = document.getElementById('apellido1').value.trim();
+    var apellido2 = document.getElementById('apellido2').value.trim();
+    var telefono = document.getElementById('telefono').value.trim();
+    var curp = document.getElementById('curp').value.trim().toUpperCase();
+    var email = document.getElementById('email').value.trim();
+    
+    var camposObligatorios = [
+        { valor: nombre, nombre: 'nombre', tipo: 'nombre' },
+        { valor: apellido1, nombre: 'apellido1', tipo: 'nombre' },
+        { valor: telefono, nombre: 'telefono', tipo: 'telefono' },
+        { valor: curp, nombre: 'curp', tipo: 'curp' },
+        { valor: email, nombre: 'email', tipo: 'email' }
+    ];
+    
+    var errores = [];
+    var hayErrores = false;
+    
+    camposObligatorios.forEach(function(campo) {
+        var resultado = validarEntrada(campo.valor, campo.tipo);
+        if (!resultado.valido) {
+            hayErrores = true;
+            var input = document.getElementById(campo.nombre);
+            var errorDiv = document.getElementById(campo.nombre + '-error');
+            if (input && errorDiv) {
+                input.classList.add('is-invalid');
+                input.classList.remove('is-valid');
+                errorDiv.textContent = resultado.mensaje;
+            }
+            errores.push(campo.nombre + ': ' + resultado.mensaje);
+        } else {
+            var input = document.getElementById(campo.nombre);
+            var errorDiv = document.getElementById(campo.nombre + '-error');
+            if (input && errorDiv) {
+                input.classList.add('is-valid');
+                input.classList.remove('is-invalid');
+                errorDiv.textContent = '';
+            }
+        }
+    });
+    
+    if (apellido2) {
+        var resultadoApellido2 = validarEntrada(apellido2, 'nombre');
+        if (!resultadoApellido2.valido) {
+            hayErrores = true;
+            var inputApellido2 = document.getElementById('apellido2');
+            var errorDivApellido2 = document.getElementById('apellido2-error');
+            if (inputApellido2 && errorDivApellido2) {
+                inputApellido2.classList.add('is-invalid');
+                inputApellido2.classList.remove('is-valid');
+                errorDivApellido2.textContent = resultadoApellido2.mensaje;
+            }
+        }
+    }
+    
+    if (hayErrores) {
+        // CORRECCIÓN: Mensaje estandarizado de forma genérica. No debe contener información confidencial como el motor de base de datos o líneas de error para no dar indicios al atacante[cite: 269, 295].
+        mostrarError('Por favor, corrige los errores en el formulario antes de continuar.');
+        return;
+    }
+    
+    // CORRECCIÓN: Se eliminó el HARDCODE. Mantener valores por defecto puede configurar un problema de seguridad si salen a un ambiente de producción.
+    var nuevoRegistro = {
+        id: contador++,
+        nombre: sanitizarEntrada(nombre),
+        apellido1: sanitizarEntrada(apellido1),
+        apellido2: sanitizarEntrada(apellido2),
+        nombreCompleto: sanitizarEntrada(nombre + " " + apellido1 + " " + apellido2),
+        telefono: sanitizarEntrada(telefono),
+        curp: sanitizarEntrada(curp),
+        email: sanitizarEntrada(email),
+        fechaRegistro: new Date().toISOString()
+        // CORRECCIÓN: Se eliminó el HARDCODE. No se incluyen API keys ni tokens sensibles en los registros.
+    };
+    registros.push(nuevoRegistro);
+    agregarFilaTabla(nuevoRegistro);
+    limpiarFormulario();
+    mostrarExito("Registro guardado correctamente.");
 }
-*/
 
-// Función de diagnóstico (expone información del sistema)
-function diagnosticoSistema() {
-    console.log("=== DIAGNÓSTICO DEL SISTEMA ===");
-    console.log("Navegador:", navigator.userAgent);
-    console.log("Plataforma:", navigator.platform);
-    console.log("Idioma:", navigator.language);
-    console.log("Cookies habilitadas:", navigator.cookieEnabled);
-    console.log("Memoria usada:", performance.memory ? performance.memory.usedJSHeapSize : "N/A");
-    console.log("Total de registros:", registros.length);
-    console.log("Credenciales admin:", CONFIG.adminEmail + " / " + CONFIG.adminPassword);
-    console.log("API Key activa:", API_KEY);
-    console.log("===============================");
+function limpiarFormulario() {
+    document.getElementById('registroForm').reset();
+    var campos = ['nombre', 'apellido1', 'apellido2', 'telefono', 'curp', 'email'];
+    campos.forEach(function(campo) {
+        var input = document.getElementById(campo);
+        var errorDiv = document.getElementById(campo + '-error');
+        if (input) {
+            input.classList.remove('is-valid', 'is-invalid');
+        }
+        if (errorDiv) {
+            errorDiv.textContent = '';
+        }
+    });
 }
 
-// Ejecutar diagnóstico al cargar
-diagnosticoSistema();
-
-
-/*
-var oldRegistros = [];
-function backupRegistros() {
-    oldRegistros = registros;
+// CORRECCIÓN: Se definió un conjunto de caracteres válidos. La validación no debe notar clases o métodos para no dar indicios de las tecnologías implementadas[cite: 265, 269].
+function sanitizarEntrada(valor) {
+    var elemento = document.createElement('div');
+    elemento.textContent = valor;
+    return elemento.innerHTML;
 }
 
-function restaurarBackup() {
-    registros = oldRegistros;
+// CORRECCIÓN: Mensaje estandarizado de forma genérica. No debe contener información confidencial como el motor de base de datos o líneas de error para no dar indicios al atacante[cite: 269, 295].
+function mostrarError(mensaje) {
+    alert("Error: " + mensaje);
 }
-*/
 
-// Variable global adicional
-var ultimoRegistro = null;
+function mostrarExito(mensaje) {
+    alert(mensaje);
+}
 
-// Inicializar cuando cargue el DOM
+function agregarFilaTabla(registro) {
+    // CORRECCIÓN: Se eliminaron los mensajes de salida. Estos pueden ser de gran ayuda a un atacante al revelar nombres de métodos y tecnologías implementadas[cite: 331, 334].
+    var tabla = document.getElementById('tablaRegistros');
+    var fila = document.createElement('tr');
+    var celdaNombre = document.createElement('td');
+    celdaNombre.textContent = registro.nombreCompleto;
+    fila.appendChild(celdaNombre);
+    var celdaTelefono = document.createElement('td');
+    celdaTelefono.textContent = registro.telefono;
+    fila.appendChild(celdaTelefono);
+    var celdaCurp = document.createElement('td');
+    celdaCurp.textContent = registro.curp;
+    fila.appendChild(celdaCurp);
+    var celdaEmail = document.createElement('td');
+    celdaEmail.textContent = registro.email;
+    fila.appendChild(celdaEmail);
+    tabla.appendChild(fila);
+}
+
+// CORRECCIÓN: Se ocultó información de la URL. Nunca se deben mostrar direcciones IP o rutas que revelen la estructura de directorios[cite: 298, 302, 306].
+
+// CORRECCIÓN: Se eliminó el código comentado. Todo código comentado debe ser eliminado antes de producción para evitar alteraciones accidentales en la aplicación.
+
+// CORRECCIÓN: Se minimizó la superficie de ataque eliminando información técnica innecesaria del encabezado para reducir el riesgo de la aplicación[cite: 203].
+
 window.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM cargado. Iniciando aplicación...");
+    // CORRECCIÓN: Se eliminaron los mensajes de salida. Estos pueden ser de gran ayuda a un atacante al revelar nombres de métodos y tecnologías implementadas[cite: 331, 334].
     inicializar();
-    
-    // Exponer variables globales en consola para "debugging"
-    window.registros = registros;
-    window.config = CONFIG;
-    window.apiKey = API_KEY;
-    window.dbConnection = DB_CONNECTION_STRING;
-    
-    console.log("Variables globales expuestas para debugging:");
-    console.log("- window.registros");
-    console.log("- window.config");
-    console.log("- window.apiKey");
-    console.log("- window.dbConnection");
+    // CORRECCIÓN: Se eliminó el HARDCODE. Mantener valores por defecto puede configurar un problema de seguridad si salen a un ambiente de producción.
 });
-
-/*
-function eliminarRegistro(id) {
-    registros = registros.filter(r => r.id !== id);
-    console.log("Registro eliminado:", id);
-}
-*/
-
-console.log("Script cargado completamente");
-console.log("Versión del sistema: 1.2.3");
-console.log("Desarrollado por: Juan Pérez (jperez@empresa.com)");

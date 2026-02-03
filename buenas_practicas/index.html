@@ -1,75 +1,81 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Usuarios - Sistema Beta v1.2.3</title>
-    <!-- Bootstrap 5 CDN -->
+    <!-- CORRECCIÓN: Se minimizó la superficie de ataque eliminando información técnica innecesaria del encabezado para reducir el riesgo de la aplicación[cite: 203]. -->
+    <title>Registro de Usuarios</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- codigo viejo del diseño anterior -->
-    <!-- <style>
-        body {
-            background-color: #f0f0f0;
-        }
-        .old-header {
-            background-color: #ff6b6b;
-            color: white;
-        }
-        .deprecated-button {
-            background-color: #4ecdc4;
-        }
-    </style> -->
+    <!-- CORRECCIÓN: Se eliminó el código comentado. Todo código comentado debe ser eliminado antes de producción para evitar alteraciones accidentales en la aplicación. -->
 </head>
+
 <body class="bg-light">
     <div class="container py-5">
         <div class="card shadow-lg mb-4">
             <div class="card-header bg-primary text-white">
                 <h2 class="mb-0">📝 Registro de Usuarios</h2>
-                <small>Sistema de Base de Datos v1.2.3 - Puerto 8080 - MySQL 5.7</small>
+                <!-- CORRECCIÓN: Se minimizó la superficie de ataque eliminando información técnica innecesaria del encabezado para reducir el riesgo de la aplicación[cite: 203]. -->
             </div>
             <div class="card-body">
                 <form id="registroForm">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="nombre" class="form-label">Nombre(s)</label>
-                            <input type="text" class="form-control" id="nombre" placeholder="Ingresa tu nombre">
+                            <label for="nombre" class="form-label">Nombre(s) *</label>
+                            <!-- CORRECCIÓN: Validación de entrada - Se definió un conjunto de caracteres válidos en el patrón HTML5 para prevenir inyección y caracteres maliciosos desde el cliente -->
+                            <input type="text" class="form-control" id="nombre" placeholder="Ingresa tu nombre"
+                                maxlength="50" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}"
+                                title="Solo se permiten letras, acentos y espacios. Entre 2 y 50 caracteres.">
+                            <div class="invalid-feedback" id="nombre-error"></div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="apellido1" class="form-label">Primer Apellido</label>
-                            <input type="text" class="form-control" id="apellido1" placeholder="Primer apellido">
+                            <label for="apellido1" class="form-label">Primer Apellido *</label>
+                            <!-- CORRECCIÓN: Validación de entrada - Se implementó validación de caracteres válidos para prevenir inyección de código malicioso -->
+                            <input type="text" class="form-control" id="apellido1" placeholder="Primer apellido"
+                                maxlength="50" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}"
+                                title="Solo se permiten letras, acentos y espacios. Entre 2 y 50 caracteres.">
+                            <div class="invalid-feedback" id="apellido1-error"></div>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="apellido2" class="form-label">Segundo Apellido</label>
-                            <input type="text" class="form-control" id="apellido2" placeholder="Segundo apellido">
+                            <!-- CORRECCIÓN: Validación de entrada - Patrón de caracteres seguros aplicado también a campos opcionales para mantener consistencia en la seguridad -->
+                            <input type="text" class="form-control" id="apellido2" placeholder="Segundo apellido"
+                                maxlength="50" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}"
+                                title="Solo se permiten letras, acentos y espacios. Entre 2 y 50 caracteres.">
+                            <div class="invalid-feedback" id="apellido2-error"></div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="telefono" class="form-label">Teléfono</label>
-                            <input type="text" class="form-control" id="telefono" placeholder="10 dígitos">
+                            <label for="telefono" class="form-label">Teléfono *</label>
+                            <!-- CORRECCIÓN: Validación de entrada - Restricción estricta a solo dígitos numéricos para prevenir inyección de caracteres especiales -->
+                            <input type="text" class="form-control" id="telefono" placeholder="10 dígitos"
+                                maxlength="10" pattern="[0-9]{10}" inputmode="numeric"
+                                title="Debe contener exactamente 10 dígitos numéricos.">
+                            <div class="invalid-feedback" id="telefono-error"></div>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="curp" class="form-label">CURP</label>
-                            <input type="text" class="form-control" id="curp" placeholder="18 caracteres">
+                            <label for="curp" class="form-label">CURP *</label>
+                            <!-- CORRECCIÓN: Validación de entrada - Implementación de patrón específico CURP para garantizar formato válido y prevenir manipulación de datos -->
+                            <input type="text" class="form-control" id="curp" placeholder="18 caracteres" maxlength="18"
+                                pattern="[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9A-Z]{2}"
+                                title="Formato CURP: 4 letras, 6 números, H/M, 5 letras, 2 caracteres alfanuméricos.">
+                            <div class="invalid-feedback" id="curp-error"></div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="email" class="form-label">Correo Electrónico</label>
-                            <input type="text" class="form-control" id="email" placeholder="ejemplo@correo.com">
+                            <label for="email" class="form-label">Correo Electrónico *</label>
+                            <!-- CORRECCIÓN: Validación de entrada - El tipo email de HTML5 proporciona validación automática del formato de correo electrónico en el navegador -->
+                            <input type="email" class="form-control" id="email" placeholder="ejemplo@correo.com"
+                                title="Ingrese un correo electrónico válido.">
+                            <div class="invalid-feedback" id="email-error"></div>
                         </div>
                     </div>
 
-                    <!--
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="password" class="form-label">Contraseña</label>
-                            <input type="password" class="form-control" id="password">
-                        </div>
-                    </div>
-                    -->
+                    <!-- CORRECCIÓN: Se eliminó el código comentado. Todo código comentado debe ser eliminado antes de producción para evitar alteraciones accidentales en la aplicación. -->
 
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
@@ -80,7 +86,7 @@
             </div>
         </div>
 
-        <!-- Tabla de registros -->
+        <!-- CORRECCIÓN: Se minimizó la superficie de ataque eliminando información técnica innecesaria. -->
         <div class="mt-4">
             <div class="card shadow">
                 <div class="card-header bg-success text-white">
@@ -98,7 +104,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tablaRegistros">
-                                <!-- Los registros se insertarán aquí -->
+                                <!-- CORRECCIÓN: Se minimizó la superficie de ataque eliminando información técnica innecesaria. -->
                             </tbody>
                         </table>
                     </div>
@@ -107,9 +113,10 @@
         </div>
     </div>
 
-    <!-- Bootstrap 5 JS Bundle -->
+    <!-- CORRECCIÓN: Se minimizó la superficie de ataque eliminando información técnica innecesaria. -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Script principal -->
+    <!-- CORRECCIÓN: Se minimizó la superficie de ataque eliminando información técnica innecesaria. -->
     <script src="script.js"></script>
 </body>
+
 </html>
